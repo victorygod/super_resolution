@@ -58,20 +58,9 @@ class SISR(object):
                 outputs = model.predict(noise_images)
                 
                 self.save_images(outputs, "_pred")
-                self.save_images(noise_images, "_input")
+                self.save_images((noise_images+1)/2, "_input")
                 self.save_images(ori_images, "_gt")
 
-    def batch_predict(self, imgs):
-        
-        assert os.path.exists(self.restore_path), self.restore_path+" not exits!"
-        assert len(imgs.shape)==4 and imgs.shape[1]%4==0 and imgs.shape[2]%4==0, "shape not good"
-
-        model = self.build_model(False)
-        model.load_weights(self.restore_path)
-        print("restored from", self.restore_path)
-        
-        imgs = imgs.astype(np.float32)/127.5 - 1
-        return model.predict(imgs)
 
     def identity_preprocess(self, ori_imgs):
         img_size = (ori_imgs.shape[2], ori_imgs.shape[1])
@@ -84,7 +73,7 @@ class SISR(object):
             img = cv2.resize(img, img_size, interpolation=cv2.INTER_CUBIC)
             noise_imgs.append(img)
 
-        return ori_imgs.astype(np.float32)/127.5-1, np.array(noise_imgs).astype(np.float32)/127.5-1
+        return ori_imgs.astype(np.float32)/255, np.array(noise_imgs).astype(np.float32)/127.5-1
 
     def ratio_preprocess(self, ori_imgs, ratio=2):
         img_size = (ori_imgs.shape[2], ori_imgs.shape[1])
@@ -94,11 +83,11 @@ class SISR(object):
             img = cv2.resize(ori_img, (int(img_size[0]//ratio), int(img_size[1]//ratio)), interpolation=cv2.INTER_CUBIC)
             noise_imgs.append(img)  
 
-        return ori_imgs.astype(np.float32)/127.5-1, np.array(noise_imgs).astype(np.float32)/127.5-1
+        return ori_imgs.astype(np.float32)/255, np.array(noise_imgs).astype(np.float32)/127.5-1
 
     def save_images(self, imgs, suffix):
         for i, img in enumerate(imgs):
-            cv2.imwrite(os.path.join(self.output_dir, str(i)+suffix+".jpg"), (img+1)*127.5)
+            cv2.imwrite(os.path.join(self.output_dir, str(i)+suffix+".jpg"), img*255)
 
     def PSNR(self, y_true, y_pred):
         """
